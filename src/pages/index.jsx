@@ -1,8 +1,7 @@
 import api from '../services/api';
-import UserContext from '@/contexts/UserContext';
-import { useState, useContext } from 'react';
 import styled from 'styled-components';
-import Image from 'next/image';
+import Post from '@/components/Post';
+import { parseCookies } from 'nookies';
 
 export default function Home({ posts }) {
   return (
@@ -10,26 +9,31 @@ export default function Home({ posts }) {
       <ContainerPosts>
         <Header><h1>Home Page</h1></Header>
         {posts.map((post) => {
+          console.log(post.users.picture)
           return (
-            <Posts>
-              <h1>{post.users.username}</h1>
-              <Image loader={() => post.picture} src={post.picture} alt={post.picture} width={200} height={200} />
-            </Posts>
+            <Post userId={post.userId} picture={post.users.picture} postPicture={post.picture} username={post.users.username} description={post.description} id={post.id} />
           )
         })
         }
-        <Aside>
-          <div>dois</div>
-          <div>eu</div>
-        </Aside>
       </ContainerPosts>
     </>
   )
 }
 
-export const getServerSideProps = async () => {
+export const getServerSideProps = async (ctx) => {
+  const { 'nextauth.token': token } = parseCookies(ctx);
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: '/signin',
+        permanent: false,
+      }
+    }
+  }
+
   const { data } = await api.getPosts();
-  console.log(data);
+  // console.log(data);
 
   return {
     props: {
@@ -37,6 +41,7 @@ export const getServerSideProps = async () => {
     }
   }
 }
+
 
 const Header = styled.header`
   display: flex;
@@ -55,32 +60,23 @@ const Header = styled.header`
 `
 
 const Posts = styled.div`
+  position: relative;
   display: flex;
+  padding-top: 50px;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   border: 1px solid #fff;
   border-radius: 10px;
-  width: 300px;
-  grid-area: div;
-  grid-row: auto;
-  grid-column-start: 1;
+  width: 400px;
+  height: 600px;
   justify-self: end;
 `;
 
 const ContainerPosts = styled.section`
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  row-gap: 20px;
   background-color: #534D56;
-  grid-template-areas: 
-  'header header header'
-  'div aside aside'
-  'footer footer footer';
-  grid-row: 1/3;
-  gap: 10px;
-`
-
-const Aside = styled.aside`
-  grid-area: aside;
-  background-color: #86BBD8;
-  grid-row-start: 2;
+  justify-content: center;
+  align-items: center;
 `

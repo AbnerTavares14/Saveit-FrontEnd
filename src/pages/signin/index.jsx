@@ -1,18 +1,14 @@
 import { useState, useContext } from "react";
 import { Header, Section, Form, Div } from "../signup/style";
-import api from "../../services/api";
 import Link from 'next/link';
 import { useRouter } from "next/router";
-import UserContext from '../../contexts/UserContext';
+import { AuthContext } from '../../contexts/AuthContext';
+import { parseCookies } from "nookies";
 
 export default function SignIn() {
     const [credentials, setCredentials] = useState({ email: "", password: "" });
-    const router = useRouter();
-    const { setToken, token } = useContext(UserContext);
+    const { signIn } = useContext(AuthContext);
 
-    if (token) {
-        router.push("/");
-    }
 
     function handleChange(e) {
         setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -21,9 +17,7 @@ export default function SignIn() {
     async function handleSubmit(e) {
         e.preventDefault();
         try {
-            const { data } = await api.signIn(credentials);
-            setToken(data.token);
-            router.push("/");
+            await signIn(credentials);
         } catch (error) {
             console.log(error);
         }
@@ -56,4 +50,21 @@ export default function SignIn() {
             </Div>
         </>
     )
+}
+
+export const getServerSideProps = async (ctx) => {
+    const { 'nextauth.token': token } = parseCookies(ctx);
+
+    if (token) {
+        return {
+            redirect: {
+                destination: '/',
+                permanent: false,
+            }
+        }
+    } else {
+        return {
+            props: {}
+        }
+    }
 }
