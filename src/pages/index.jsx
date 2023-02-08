@@ -9,9 +9,8 @@ export default function Home({ posts }) {
       <ContainerPosts>
         <Header><h1>Home Page</h1></Header>
         {posts.map((post) => {
-          console.log(post.users.picture)
           return (
-            <Post userId={post.userId} picture={post.users.picture} postPicture={post.picture} username={post.users.username} description={post.description} id={post.id} />
+            <Post key={post.id} userId={post.userId} picture={post.users.picture} postPicture={post.picture} username={post.users.username} description={post.description} id={post.id} />
           )
         })
         }
@@ -33,7 +32,6 @@ export const getServerSideProps = async (ctx) => {
   }
 
   const { data } = await api.getPosts();
-  // console.log(data);
 
   return {
     props: {
@@ -48,10 +46,9 @@ const Header = styled.header`
   width: 100vw;
   justify-content: center;
   align-items: center;
-  background-color: #F8F1FF;
+  background: linear-gradient(to bottom left top, #EBF2FA, #FEC9F1, #DB5461);
   height: 50px;
-  grid-area: header;
-
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
   h1 {
     font-family: 'Roboto', sans-serif;
     font-size: 16px;
@@ -59,24 +56,11 @@ const Header = styled.header`
   }
 `
 
-const Posts = styled.div`
-  position: relative;
-  display: flex;
-  padding-top: 50px;
-  flex-direction: column;
-  align-items: center;
-  border: 1px solid #fff;
-  border-radius: 10px;
-  width: 400px;
-  height: 600px;
-  justify-self: end;
-`;
-
 const ContainerPosts = styled.section`
   display: flex;
   flex-direction: column;
   row-gap: 20px;
-  background-color: #534D56;
+  background: linear-gradient(to bottom right, #EBF2FA, #FEC9F1, #DB5461);
   justify-content: center;
   align-items: center;
 `

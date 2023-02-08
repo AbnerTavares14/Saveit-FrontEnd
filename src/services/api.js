@@ -38,12 +38,27 @@ async function checkIfUserAlreadyLikedThisPost(id, token) {
     return axios.get(`${URL}/like/${id}`, config);
 }
 
+async function commentOnPost(id, comment, token) {
+    const config = {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    };
+    return axios.post(`${URL}/comment/${id}`, comment, config);
+}
+
+async function getComments(id) {
+    return axios.get(`${URL}/comment/${id}`);
+}
+
 const api = {
     signUp,
     signIn,
     getPosts,
     like,
-    checkIfUserAlreadyLikedThisPost
+    checkIfUserAlreadyLikedThisPost,
+    commentOnPost,
+    getComments
 };
 
 export default api;
