@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
         const { data } = await api.signIn({email, password});
         console.log(data);
 
-        setCookie(undefined, 'nextauth.token', data.token, {
+        setCookie(undefined, 'nextauth.token', JSON.stringify(data), {
             maxAge: 60 * 60 * 1, // 1 hour
         });
 

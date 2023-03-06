@@ -19,6 +19,17 @@ async function getPosts() {
     return axios.get(`${URL}/posts`);
 }
 
+async function createPost(data, token) {
+    const config = {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+            
+        }
+    };
+    return axios.post(`${URL}/posts`, data, config);
+}
+
 async function like(id, token) {
     const config = {
         headers: {
@@ -51,6 +62,15 @@ async function getComments(id) {
     return axios.get(`${URL}/comment/${id}`);
 }
 
+async function deletePost(id, token) {
+    const config = {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    };
+    return axios.delete(`${URL}/posts/${id}`, config);
+}
+
 const api = {
     signUp,
     signIn,
@@ -58,7 +78,9 @@ const api = {
     like,
     checkIfUserAlreadyLikedThisPost,
     commentOnPost,
-    getComments
+    getComments,
+    createPost,
+    deletePost
 };
 
 export default api;

@@ -1,14 +1,12 @@
-import { useState, useContext, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import Image from 'next/image';
 import { AiTwotoneLike } from "react-icons/ai";
-// import { AuthContext } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { parseCookies } from "nookies";
 import { TfiCommentAlt } from "react-icons/tfi";
-import Modal from 'react-modal';
-import { useQuery } from 'react-query';
-
+import Modal from "react-modal";
+import { useForm } from "../../hooks/useForm";
+import { BsTrashFill } from "react-icons/bs";
 
 import api from "@/services/api";
 
@@ -33,16 +31,18 @@ const customStyles = {
 };
 
 export default function Post(props) {
-    const { picture, postPicture, username, description, id, userId } = props;
+    const { picture, token, userIdToken, postPicture, username, description, id, userId, setDeleting } = props;
+    const sizeDescription = description?.length;
     const [readMore, setReadMore] = useState(false);
     const [modalIsOpen, setIsOpen] = useState(false);
     const [like, setLike] = useState(false);
-    const [comment, setComment] = useState("");
+    const [form, handleForm, resetForm] = useForm({
+        initialState: { comment: "" }
+    });
     const [comments, setComments] = useState([]);
-    const { 'nextauth.token': dataToken } = parseCookies();
 
     const fetch = useCallback(async () => {
-        const { data } = await api.checkIfUserAlreadyLikedThisPost(id, dataToken);
+        const { data } = await api.checkIfUserAlreadyLikedThisPost(id, token);
         if (data) {
             setLike(true);
         }
@@ -61,13 +61,10 @@ export default function Post(props) {
         setReadMore(!readMore);
     }
 
-    function handleChange(e) {
-        setComment(e.target.value);
-    }
-
     async function toggleLike(id) {
         try {
-            await api.like(id, dataToken);
+            console.log(token)
+            await api.like(id, token);
             setLike(!like);
         } catch (error) {
             console.log(error);
@@ -78,7 +75,6 @@ export default function Post(props) {
         try {
             const { data } = await api.getComments(id);
             setComments(data);
-            console.log(data);
         } catch (error) {
             console.log(error);
         }
@@ -87,9 +83,18 @@ export default function Post(props) {
     async function postComment(e) {
         e.preventDefault();
         try {
-            await api.commentOnPost(id, { comment }, dataToken);
+            await api.commentOnPost(id, { comment: form.comment }, token);
             handleComments();
-            setComment("");
+            resetForm();
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async function deletePost() {
+        try {
+            await api.deletePost(id, token);
+            setDeleting();
         } catch (error) {
             console.log(error);
         }
@@ -104,16 +109,22 @@ export default function Post(props) {
                         <h1>{username}</h1>
                     </Profile>
                 </Link>
-                <Description onClick={toggleReadMore} height={readMore ? "auto" : 50}>
+                {userIdToken === userId ? <Trash onClick={deletePost}>
+                    <BsTrashFill />
+                </Trash> : <></>}
+                {sizeDescription > 100 ? <Description onClick={toggleReadMore} height={readMore ? "auto" : '50px'}>
                     <p>{description}</p>
-                </Description>
+                </Description> :
+                    <Description height={"auto"}>
+                        <p>{description}</p>
+                    </Description>}
                 <Image unoptimized style={{ marginTop: 0, borderRadius: 10 }} loader={() => postPicture} src={postPicture} alt={postPicture} width={350} height={400} />
                 <Icons>
-                    {like ? <AiTwotoneLike onClick={() => toggleLike(id)} style={{ cursor: "pointer", color: "blue" }} /> : <AiTwotoneLike onClick={() => toggleLike(id)} style={{ cursor: "pointer", color: "#E3F2FD" }} />}
+                    {like ? <AiTwotoneLike onClick={() => toggleLike(id)} style={{ cursor: "pointer", color: "#E34A6F", }} /> : <AiTwotoneLike onClick={() => toggleLike(id)} style={{ cursor: "pointer", color: "#6F5E76" }} />}
                     <TfiCommentAlt style={{ cursor: "pointer", color: "#000" }} onClick={toggleModal} />
                 </Icons>
                 <WriteComment onSubmit={postComment}>
-                    <input type="text" placeholder="Escreva um comentário" />
+                    <input type="text" name="comment" autoComplete="off" value={form.comment} onChange={handleForm} placeholder="Escreva um comentário" />
                 </WriteComment>
                 <Modal isOpen={modalIsOpen}
                     onAfterOpen={handleComments}
@@ -131,14 +142,14 @@ export default function Post(props) {
                                     <Comment key={item.id}>
                                         <Image unoptimized width={40} height={40} style={{ borderRadius: 20, position: 'absolute', left: 5 }} loader={() => { item.users.picture }} src={item.users.picture} alt={item.users.picture} />
                                         <div>
-                                            <p>{item.comment}</p>
+                                            <span>{item.users.username}</span><p>{item.comment}</p>
                                         </div>
                                     </Comment>
                                 )
                             })}
                             <div className="comment">
                                 <form onSubmit={postComment}>
-                                    <input type="text" value={comment} onChange={handleChange} placeholder="Comente aqui" />
+                                    <input type="text" autoComplete="off" value={form.comment} onChange={handleForm} name="comment" placeholder="Comente aqui" />
                                 </form>
                             </div>
                         </>
@@ -150,8 +161,21 @@ export default function Post(props) {
     )
 }
 
+const Trash = styled.div`
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    cursor: pointer;
+    transition: 0.5s ease;
+    
+    &:hover {
+        color: red;
+    }
+`
+
 const WriteComment = styled.form`
     width: 90%;
+    margin-bottom: 15px;
     input, textarea {
         width: 100%;
         height: 30px;
@@ -253,7 +277,6 @@ const Profile = styled.div`
 const Description = styled.span`
     margin-top: 20px;
     width: 350px;
-    height: 50px;
     height: ${props => props.height};
     box-sizing: border-box;
     overflow-wrap: break-word;
@@ -275,6 +298,7 @@ const Posts = styled.div`
     border-radius: 10px;
     width: 400px;
     height: fit-content;
-    min-height: 600px;
     justify-self: end;
-    box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;`;
+    background-color: #fff;
+    box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+`;
